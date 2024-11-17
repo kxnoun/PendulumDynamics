@@ -41,24 +41,14 @@ class DoublePendulum:
         return (x1,y1), (x2,y2)
 
     def update(self):
-        # TRUE STANDARD EULER, UPDATE ANGLES THEN VELOCITIES THEN ACCEL
-
+        #symplectic euler, update accel -> vel -> angle
         # if we not dragging da ball
         if not self.drag1 and not self.drag2:
-            self.theta1 = self.theta1 + (delta_t * self.vel1)
-            self.theta2 = self.theta2 + (delta_t * self.vel2)
-
-            self.vel1 = self.vel1 + (delta_t * self.acc1)
-            self.vel2 = self.vel2 + (delta_t * self.acc2)
-
-
-            # time to update acceleration
             num1 = -G * (2 * self.m1 + self.m2) * math.sin(self.theta1)
             num2 = -self.m2 * G * math.sin(self.theta1 - 2 * self.theta2)
             num3 = -2 * math.sin(self.theta1 - self.theta2) * self.m2
             num4 = self.vel2 ** 2 * self.l2 + self.vel1 ** 2 * self.l1 * math.cos(self.theta1 - self.theta2)
             den1 = self.l1 * (2 * self.m1 + self.m2 - self.m2 * math.cos(2 * self.theta1 - 2 * self.theta2))
-            
             self.acc1 = (num1 + num2 + num3 * num4) / den1
 
             num1 = 2 * math.sin(self.theta1 - self.theta2)
@@ -67,9 +57,11 @@ class DoublePendulum:
             num4 = self.vel2 ** 2 * self.l2 * self.m2 * math.cos(self.theta1 - self.theta2)
 
             den2 = self.l2 * (2 * self.m1 + self.m2 - self.m2 * math.cos(2 * self.theta1 - 2 * self.theta2))
-
             self.acc2 = (num1 * (num2 + num3 + num4)) / den2
-            
+            self.vel1 = self.vel1 + (delta_t * self.acc1)
+            self.vel2 = self.vel2 + (delta_t * self.acc2)
+            self.theta1 = self.theta1 + (delta_t * self.vel1)
+            self.theta2 = self.theta2 + (delta_t * self.vel2)
 
     def kinetic(self):
         v1x = self.l1 * self.vel1 * math.cos(self.theta1)

@@ -9,7 +9,7 @@ G = 9.81
 black = (0, 0, 0)
 white = (255, 255, 255)
 red = (255, 0, 0)
-delta_t = 0.03
+delta_t = 0.05
 
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("bespendulum ever crEated")
@@ -30,11 +30,11 @@ class Pendulum:
         self.throwing_enabled = False  # toggle T to throw
     
     def update(self):
-        # TRUE STANDARD EULER
+        # standard euler but we flip the order
         if not self.dragging:
-            self.angle += self.velocity * delta_t # use old velocity to update angle
-            self.velocity += self.acceleration * delta_t #use old acceleration to update velocity
             self.acceleration = -(G / self.length) * math.sin(self.angle) #update acceleration
+            self.velocity += self.acceleration * delta_t #use old acceleration to update velocity
+            self.angle += self.velocity * delta_t # use old velocity to update angle
             
     
     def get_pos(self):
