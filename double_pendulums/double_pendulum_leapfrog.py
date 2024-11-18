@@ -13,7 +13,7 @@ black = (0, 0, 0)
 red = (255, 0, 0)
 G = 9.81
 FPS = 60
-delta_t = 0.05
+delta_t = 0.03
 # smaller delta t is more accurate, but slow
 # bigger delta t is less accurate but our sim runs faster
 
@@ -139,7 +139,7 @@ def draw_text(screen, text, position, font, color=black):
 
 
 origin = (width // 2, height // 4)
-double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=3 * math.pi / 4, theta2=0)
+double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
 
 
 kinetic_energies = []
@@ -193,8 +193,6 @@ while running:
     draw_text(screen, energy_text, (10, height - 60), font)
 
     time_step += 1
-    if time_step >= 10000:
-        running = False
 
     pygame.display.flip()
 

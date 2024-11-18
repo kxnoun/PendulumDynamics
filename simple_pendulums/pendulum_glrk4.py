@@ -10,7 +10,7 @@ G = 9.81
 black = (0, 0, 0)
 white = (255, 255, 255)
 red = (255, 0, 0)
-delta_t = 0.01
+delta_t = 0.03
 
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("bespendulum ever crEated")
@@ -207,8 +207,21 @@ pygame.quit()
 # plot energy after
 plt.figure(figsize=(10, 6))
 plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
-#plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
-#plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
+plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
+plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
+plt.xlabel("Time Step")
+plt.ylabel("Energy")
+plt.title("GLRK4: Pendulum Energy Over Time")
+delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
+plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
+         verticalalignment='bottom', horizontalalignment='left',
+         bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
+plt.tight_layout(rect=[0, 0, 0.98, 1])
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
 plt.xlabel("Time Step")
 plt.ylabel("Energy")
 plt.title("GLRK4: Pendulum Energy Over Time")

@@ -12,7 +12,7 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
 G = 9.81
-delta_t = 0.01
+delta_t = 0.03
 # smaller delta t is more accurate, but slow
 # bigger delta t is less accurate but our sim runs faster 
 
@@ -140,7 +140,7 @@ def draw_text(screen, text, position, font, color=black):
 
 
 origin = (width // 2, height // 4)
-double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=3 * math.pi / 4, theta2=0)
+double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
 
 
 kinetic_energies = []
@@ -203,9 +203,30 @@ plt.figure(figsize=(10, 6))
 plt.plot(time_steps, total_energies, label="Total Energy", color='red')
 plt.plot(time_steps, kinetic_energies, label="Kinetic Energy", color='green')
 plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
-plt.title("Energy Over Time")
+plt.title("Velocity Verlet: Double Pendulum Energy Over Time")
 plt.xlabel("Time Step")
 plt.ylabel("Energy")
 plt.legend(loc="upper right")
+delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
+plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
+         verticalalignment='bottom', horizontalalignment='left',
+         bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
+plt.tight_layout(rect=[0, 0, 0.98, 1])
+plt.grid()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(time_steps, total_energies, label="Total Energy", color='red')
+plt.title("Velocity Verlet: Double Pendulum Energy Over Time")
+plt.xlabel("Time Step")
+plt.ylabel("Energy")
+plt.legend(loc="upper right")
+delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
+plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
+         verticalalignment='bottom', horizontalalignment='left',
+         bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
+plt.tight_layout(rect=[0, 0, 0.98, 1])
 plt.grid()
 plt.show()

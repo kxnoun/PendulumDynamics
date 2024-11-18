@@ -235,8 +235,6 @@ if __name__ == '__main__':
         draw_text(screen, energy_text, (10, height - 60), font)
 
         time_step += 1
-        #if time_step >= 2500:
-        #    running = False
 
         pygame.display.flip()
 
@@ -248,8 +246,14 @@ if __name__ == '__main__':
     plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
     plt.title("GLRK4: Double Pendulum Energy Over Time")
     plt.xlabel("Time Step")
-    plt.ylabel("Energy")    
+    plt.ylabel("Energy")
     plt.legend(loc="upper right")
+    delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
+    plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
+            verticalalignment='bottom', horizontalalignment='left',
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
+    plt.tight_layout(rect=[0, 0, 0.98, 1])
     plt.grid()
     plt.show()
 
@@ -259,5 +263,11 @@ if __name__ == '__main__':
     plt.xlabel("Time Step")
     plt.ylabel("Energy")
     plt.legend(loc="upper right")
+    delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
+    plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
+            verticalalignment='bottom', horizontalalignment='left',
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
+    plt.tight_layout(rect=[0, 0, 0.98, 1])
     plt.grid()
     plt.show()
