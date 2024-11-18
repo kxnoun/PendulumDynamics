@@ -1,6 +1,8 @@
 import pygame
 import math
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import fsolve
 pygame.init()
 
 width, height = 800, 800
@@ -12,9 +14,7 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
 G = 9.81
-delta_t = 0.01
-# smaller delta t is more accurate, but slow
-# bigger delta t is less accurate but our sim runs faster 
+delta_t = 0.1
 
 class DoublePendulum:
     def __init__(self, origin, l1, l2, m1, m2, theta1, theta2):
@@ -42,19 +42,33 @@ class DoublePendulum:
 
     def update(self):
         if not self.drag1 and not self.drag2:
-            self.theta1 += self.vel1 * delta_t + 0.5 * self.acc1 * delta_t ** 2
-            self.theta2 += self.vel2 * delta_t + 0.5 * self.acc2 * delta_t ** 2
-
-            vel1_half = self.vel1 + 0.5 * self.acc1 * delta_t
-            vel2_half = self.vel2 + 0.5 * self.acc2 * delta_t
-
+            h = delta_t
             m1 = self.m1
             m2 = self.m2
             l1 = self.l1
             l2 = self.l2
 
+            y_n = np.array([self.theta1, self.theta2, self.vel1, self.vel2])
+            # c1 and c2 unusued since diff equations do not depend explicitly on time
+            c1 = 0.5 - math.sqrt(3)/6
+            c2 = 0.5 + math.sqrt(3)/6
+            a11 = 0.25
+            a12 = 0.25 - math.sqrt(3)/6
+            a21 = 0.25 + math.sqrt(3)/6
+            a22 = 0.25
+            b1 = 0.5
+            b2 = 0.5
+
+            K1_guess = np.zeros(4)
+            K2_guess = np.zeros(4)
+
+            def compute_derivatives(y):
+                theta1, theta2, omega1, omega2 = y
+                acc1, acc2 = compute_accelerations(theta1, theta2, omega1, omega2)
+                return np.array([omega1, omega2, acc1, acc2])
+            
             @staticmethod
-            def compute_accelerations(theta1, theta2, vel1, vel2):
+            def compute_accelerations(theta1, theta2, omega1, omega2):
                 delta_theta = theta1 - theta2
                 den1 = l1 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
                 den2 = l2 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
@@ -62,25 +76,49 @@ class DoublePendulum:
                 num1 = -G * (2 * m1 + m2) * math.sin(theta1)
                 num2 = -m2 * G * math.sin(theta1 - 2 * theta2)
                 num3 = -2 * math.sin(delta_theta) * m2
-                num4 = vel2 ** 2 * l2 + vel1 ** 2 * l1 * math.cos(delta_theta)
+                num4 = omega2 ** 2 * l2 + omega1 ** 2 * l1 * math.cos(delta_theta)
                 acc1 = (num1 + num2 + num3 * num4) / den1
 
                 num1 = 2 * math.sin(delta_theta)
-                num2 = vel1 ** 2 * l1 * (m1 + m2)
+                num2 = omega1 ** 2 * l1 * (m1 + m2)
                 num3 = G * (m1 + m2) * math.cos(theta1)
-                num4 = vel2 ** 2 * l2 * m2 * math.cos(delta_theta)
+                num4 = omega2 ** 2 * l2 * m2 * math.cos(delta_theta)
                 acc2 = num1 * (num2 + num3 + num4) / den2
 
                 return acc1, acc2
 
-            acc1_new, acc2_new = compute_accelerations(self.theta1, self.theta2, vel1_half, vel2_half)
+            def residuals(K):
+                K1 = K[:4]
+                K2 = K[4:]
 
-            self.vel1 = vel1_half + 0.5 * acc1_new * delta_t
-            self.vel2 = vel2_half + 0.5 * acc2_new * delta_t
+                y1 = y_n + h * (a11 * K1 + a12 * K2)
+                f1 = compute_derivatives(y1)
+                res1 = K1 - f1
 
-            self.acc1 = acc1_new
-            self.acc2 = acc2_new
+                y2 = y_n + h * (a21 * K1 + a22 * K2)
+                f2 = compute_derivatives(y2)
+                res2 = K2 - f2
 
+                return np.concatenate((res1, res2))
+
+            K_initial = np.concatenate((K1_guess, K2_guess))
+            K_solution, _ , ier, msg = fsolve(residuals, K_initial, full_output=True)
+
+            if ier != 1: # if we cant converge, we should always be able to tho
+                raise RuntimeError(msg)
+
+            K1 = K_solution[:4]
+            K2 = K_solution[4:]
+
+            y_n_plus_1 = y_n + h * (b1 * K1 + b2 * K2)
+
+            self.theta1 = y_n_plus_1[0]
+            self.theta2 = y_n_plus_1[1]
+            self.vel1 = y_n_plus_1[2]
+            self.vel2 = y_n_plus_1[3]
+
+            self.acc1, self.acc2 = compute_accelerations(self.theta1, self.theta2, self.vel1, self.vel2)
+            
 
     def kinetic(self):
         v1x = self.l1 * self.vel1 * math.cos(self.theta1)

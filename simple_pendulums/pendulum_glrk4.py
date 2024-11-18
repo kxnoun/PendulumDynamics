@@ -2,6 +2,7 @@ import pygame
 import math
 import time
 import matplotlib.pyplot as plt
+from scipy.optimize import fsolve
 
 pygame.init()
 width, height = 800, 800
@@ -29,18 +30,59 @@ class Pendulum:
         self.max_history_length = 4
         self.throwing_enabled = False  # toggle T to throw
     
-    def update(self):
-        # VELOCITY VERLET!
+    def update(self): #absolutely overkill hahah
         if not self.dragging:
-            #angle_new = angle_old + velocity_old * delta_t + 0.5 * accel_old * delta_t^2
-            self.angle = self.angle + (self.velocity * delta_t + (0.5 * self.acceleration) * (delta_t ** 2))
-            old_accel = self.acceleration
+            h = delta_t
+            L = self.length
+            #curr state
+            theta_n = self.angle
+            omega_n = self.velocity
 
-            # update acceleration using new angle
-            self.acceleration = -(G / self.length) * math.sin(self.angle) # update the angle
+            # c1,c2 not used bc diff equations are not time dep
+            c1 = 0.5 - math.sqrt(3)/6
+            c2 = 0.5 + math.sqrt(3)/6
+            a11 = 0.25
+            a12 = 0.25 - math.sqrt(3)/6
+            a21 = 0.25 + math.sqrt(3)/6
+            a22 = 0.25
+            b1 = 0.5
+            b2 = 0.5
 
-            # velocity_new = velocity_old + (0.5 * (new_accel + old_accel) * delta_t)
-            self.velocity = self.velocity + (0.5 * (self.acceleration + old_accel) * delta_t)
+            K1_guess = [omega_n, -G/L * math.sin(theta_n)]
+            K2_guess = [omega_n, -G/L * math.sin(theta_n)]
+            K_guess = K1_guess + K2_guess
+
+            def residuals(K):
+                K1_theta, K1_omega, K2_theta, K2_omega = K
+
+                theta_c1 = theta_n + h * (a11 * K1_theta + a12 * K2_theta)
+                omega_c1 = omega_n + h * (a11 * K1_omega + a12 * K2_omega)
+                f1_theta = omega_c1
+                f1_omega = -G / L * math.sin(theta_c1)
+
+                res1_theta = K1_theta - f1_theta
+                res1_omega = K1_omega - f1_omega
+
+                theta_c2 = theta_n + h * (a21 * K1_theta + a22 * K2_theta)
+                omega_c2 = omega_n + h * (a21 * K1_omega + a22 * K2_omega)
+                f2_theta = omega_c2
+                f2_omega = -G / L * math.sin(theta_c2)
+
+                res2_theta = K2_theta - f2_theta
+                res2_omega = K2_omega - f2_omega
+
+                return [res1_theta, res1_omega, res2_theta, res2_omega]
+
+            K_solution, _ , ier, msg = fsolve(residuals, K_guess, full_output=True)
+
+            if ier != 1: # if we cant converge, we should always be able to tho
+                raise RuntimeError(msg) 
+
+            K1_theta, K1_omega, K2_theta, K2_omega = K_solution
+
+            self.angle += h * (b1 * K1_theta + b2 * K2_theta)
+            self.velocity += h * (b1 * K1_omega + b2 * K2_omega)
+            self.acceleration = -G / L * math.sin(self.angle)
             
     
     def get_pos(self):
@@ -157,7 +199,7 @@ while running:
     draw_text(screen, energy_text, (10, height - 60), font)
 
     time_step += 1
-    if time_step == 5000:
+    if time_step == 2500:  # delete later
         running = False
 
     pygame.display.flip()
@@ -167,11 +209,11 @@ pygame.quit()
 # plot energy after
 plt.figure(figsize=(10, 6))
 plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
-plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
-plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
+#plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
+#plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
 plt.xlabel("Time Step")
 plt.ylabel("Energy")
-plt.title("Velocity Verlet Method: Pendulum Energy Over Time")
+plt.title("GLRK4: Pendulum Energy Over Time")
 delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
 plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
          verticalalignment='bottom', horizontalalignment='left',

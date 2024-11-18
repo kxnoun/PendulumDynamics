@@ -12,7 +12,7 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
 G = 9.81
-delta_t = 0.01
+delta_t = 0.05
 # smaller delta t is more accurate, but slow
 # bigger delta t is less accurate but our sim runs faster 
 
@@ -42,45 +42,72 @@ class DoublePendulum:
 
     def update(self):
         if not self.drag1 and not self.drag2:
-            self.theta1 += self.vel1 * delta_t + 0.5 * self.acc1 * delta_t ** 2
-            self.theta2 += self.vel2 * delta_t + 0.5 * self.acc2 * delta_t ** 2
-
-            vel1_half = self.vel1 + 0.5 * self.acc1 * delta_t
-            vel2_half = self.vel2 + 0.5 * self.acc2 * delta_t
-
+            h = delta_t
             m1 = self.m1
             m2 = self.m2
             l1 = self.l1
             l2 = self.l2
 
+            # curr state
+            theta1_n = self.theta1
+            theta2_n = self.theta2
+            omega1_n = self.vel1
+            omega2_n = self.vel2
+
             @staticmethod
-            def compute_accelerations(theta1, theta2, vel1, vel2):
+            def compute_accelerations(theta1, theta2, omega1, omega2):
                 delta_theta = theta1 - theta2
                 den1 = l1 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
                 den2 = l2 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
-
                 num1 = -G * (2 * m1 + m2) * math.sin(theta1)
                 num2 = -m2 * G * math.sin(theta1 - 2 * theta2)
                 num3 = -2 * math.sin(delta_theta) * m2
-                num4 = vel2 ** 2 * l2 + vel1 ** 2 * l1 * math.cos(delta_theta)
+                num4 = omega2 ** 2 * l2 + omega1 ** 2 * l1 * math.cos(delta_theta)
                 acc1 = (num1 + num2 + num3 * num4) / den1
-
                 num1 = 2 * math.sin(delta_theta)
-                num2 = vel1 ** 2 * l1 * (m1 + m2)
+                num2 = omega1 ** 2 * l1 * (m1 + m2)
                 num3 = G * (m1 + m2) * math.cos(theta1)
-                num4 = vel2 ** 2 * l2 * m2 * math.cos(delta_theta)
+                num4 = omega2 ** 2 * l2 * m2 * math.cos(delta_theta)
                 acc2 = num1 * (num2 + num3 + num4) / den2
 
                 return acc1, acc2
 
-            acc1_new, acc2_new = compute_accelerations(self.theta1, self.theta2, vel1_half, vel2_half)
 
-            self.vel1 = vel1_half + 0.5 * acc1_new * delta_t
-            self.vel2 = vel2_half + 0.5 * acc2_new * delta_t
+            k1_theta1 = omega1_n
+            k1_theta2 = omega2_n
+            k1_omega1, k1_omega2 = compute_accelerations(theta1_n, theta2_n, omega1_n, omega2_n)
 
-            self.acc1 = acc1_new
-            self.acc2 = acc2_new
+            theta1_k2 = theta1_n + 0.5 * h * k1_theta1
+            theta2_k2 = theta2_n + 0.5 * h * k1_theta2
+            omega1_k2 = omega1_n + 0.5 * h * k1_omega1
+            omega2_k2 = omega2_n + 0.5 * h * k1_omega2
+            k2_theta1 = omega1_k2
+            k2_theta2 = omega2_k2
+            k2_omega1, k2_omega2 = compute_accelerations(theta1_k2, theta2_k2, omega1_k2, omega2_k2)
 
+            theta1_k3 = theta1_n + 0.5 * h * k2_theta1
+            theta2_k3 = theta2_n + 0.5 * h * k2_theta2
+            omega1_k3 = omega1_n + 0.5 * h * k2_omega1
+            omega2_k3 = omega2_n + 0.5 * h * k2_omega2
+            k3_theta1 = omega1_k3
+            k3_theta2 = omega2_k3
+            k3_omega1, k3_omega2 = compute_accelerations(theta1_k3, theta2_k3, omega1_k3, omega2_k3)
+
+            theta1_k4 = theta1_n + h * k3_theta1
+            theta2_k4 = theta2_n + h * k3_theta2
+            omega1_k4 = omega1_n + h * k3_omega1
+            omega2_k4 = omega2_n + h * k3_omega2
+            k4_theta1 = omega1_k4
+            k4_theta2 = omega2_k4
+            k4_omega1, k4_omega2 = compute_accelerations(theta1_k4, theta2_k4, omega1_k4, omega2_k4)
+
+            self.theta1 += (h / 6) * (k1_theta1 + 2 * k2_theta1 + 2 * k3_theta1 + k4_theta1)
+            self.theta2 += (h / 6) * (k1_theta2 + 2 * k2_theta2 + 2 * k3_theta2 + k4_theta2)
+            self.vel1 += (h / 6) * (k1_omega1 + 2 * k2_omega1 + 2 * k3_omega1 + k4_omega1)
+            self.vel2 += (h / 6) * (k1_omega2 + 2 * k2_omega2 + 2 * k3_omega2 + k4_omega2)
+
+            self.acc1, self.acc2 = compute_accelerations(self.theta1, self.theta2, self.vel1, self.vel2)
+            
 
     def kinetic(self):
         v1x = self.l1 * self.vel1 * math.cos(self.theta1)

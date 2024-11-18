@@ -30,17 +30,35 @@ class Pendulum:
         self.throwing_enabled = False  # toggle T to throw
     
     def update(self):
-        # VELOCITY VERLET!
         if not self.dragging:
-            #angle_new = angle_old + velocity_old * delta_t + 0.5 * accel_old * delta_t^2
-            self.angle = self.angle + (self.velocity * delta_t + (0.5 * self.acceleration) * (delta_t ** 2))
-            old_accel = self.acceleration
+            h = delta_t
+            g_over_L = G / self.length
 
-            # update acceleration using new angle
-            self.acceleration = -(G / self.length) * math.sin(self.angle) # update the angle
+            # k1
+            k1_theta = self.velocity
+            k1_omega = -g_over_L * math.sin(self.angle)
 
-            # velocity_new = velocity_old + (0.5 * (new_accel + old_accel) * delta_t)
-            self.velocity = self.velocity + (0.5 * (self.acceleration + old_accel) * delta_t)
+            # k2
+            theta_mid = self.angle + k1_theta * h / 2
+            omega_mid = self.velocity + k1_omega * h / 2
+            k2_theta = omega_mid
+            k2_omega = -g_over_L * math.sin(theta_mid)
+
+            # k3
+            theta_mid = self.angle + k2_theta * h / 2
+            omega_mid = self.velocity + k2_omega * h / 2
+            k3_theta = omega_mid
+            k3_omega = -g_over_L * math.sin(theta_mid)
+
+            # k4
+            theta_end = self.angle + k3_theta * h
+            omega_end = self.velocity + k3_omega * h
+            k4_theta = omega_end
+            k4_omega = -g_over_L * math.sin(theta_end)
+
+            # update
+            self.angle += h * (k1_theta + 2*k2_theta + 2*k3_theta + k4_theta) / 6
+            self.velocity += h * (k1_omega + 2*k2_omega + 2*k3_omega + k4_omega) / 6
             
     
     def get_pos(self):
@@ -157,7 +175,7 @@ while running:
     draw_text(screen, energy_text, (10, height - 60), font)
 
     time_step += 1
-    if time_step == 5000:
+    if time_step == 2500:
         running = False
 
     pygame.display.flip()
@@ -167,11 +185,11 @@ pygame.quit()
 # plot energy after
 plt.figure(figsize=(10, 6))
 plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
-plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
-plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
+#plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
+#plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
 plt.xlabel("Time Step")
 plt.ylabel("Energy")
-plt.title("Velocity Verlet Method: Pendulum Energy Over Time")
+plt.title("RK4: Pendulum Energy Over Time")
 delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
 plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
          verticalalignment='bottom', horizontalalignment='left',

@@ -184,6 +184,8 @@ while running:
     draw_text(screen, energy_text, (10, height - 60), font)
 
     time_step += 1
+    if time_step >= 10000:
+        running = False
 
     pygame.display.flip()
 

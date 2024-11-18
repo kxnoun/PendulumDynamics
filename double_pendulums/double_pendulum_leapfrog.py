@@ -45,32 +45,41 @@ class DoublePendulum:
         # if we not dragging da ball
         if not self.drag1 and not self.drag2:
             # all our physics go BOOM
-            # first i do the numerator
-            num1 = -G * (2 * self.m1 + self.m2) * math.sin(self.theta1)
-            num2 = -self.m2 * G * math.sin(self.theta1 - 2 * self.theta2)
-            num3 = -2 * math.sin(self.theta1 - self.theta2) * self.m2
-            num4 = self.vel2 ** 2 * self.l2 + self.vel1 ** 2 * self.l1 * math.cos(self.theta1 - self.theta2)
+            self.vel1 += 0.5 * delta_t * self.acc1
+            self.vel2 += 0.5 * delta_t * self.acc2
 
-            # then denominator
-            den1 = self.l1 * (2 * self.m1 + self.m2 - self.m2 * math.cos(2 * self.theta1 - 2 * self.theta2))
-            # calculate acceleration of 1st ball
-            self.acc1 = (num1 + num2 + num3 * num4) / den1
+            self.theta1 += delta_t * self.vel1
+            self.theta2 += delta_t * self.vel2
 
-            # then i do the numerator again
-            num1 = 2 * math.sin(self.theta1 - self.theta2)
-            num2 = (self.vel1 ** 2 * self.l1 * (self.m1 + self.m2))
-            num3 = G * (self.m1 + self.m2) * math.cos(self.theta1)
-            num4 = self.vel2 ** 2 * self.l2 * self.m2 * math.cos(self.theta1 - self.theta2)
+            m1 = self.m1
+            m2 = self.m2
+            l1 = self.l1
+            l2 = self.l2
+            
+            @staticmethod
+            def compute_accelerations(theta1, theta2, vel1, vel2):
+                delta_theta = theta1 - theta2
+                den1 = l1 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
+                den2 = l2 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
 
-            # denominator again
-            den2 = self.l2 * (2 * self.m1 + self.m2 - self.m2 * math.cos(2 * self.theta1 - 2 * self.theta2))
-            # ball 2
-            self.acc2 = (num1 * (num2 + num3 + num4)) / den2
+                num1 = -G * (2 * m1 + m2) * math.sin(theta1)
+                num2 = -m2 * G * math.sin(theta1 - 2 * theta2)
+                num3 = -2 * math.sin(delta_theta) * m2
+                num4 = vel2 ** 2 * l2 + vel1 ** 2 * l1 * math.cos(delta_theta)
+                acc1 = (num1 + num2 + num3 * num4) / den1
 
-            self.vel1 = self.vel1 + self.acc1 * delta_t
-            self.vel2 = self.vel2 + self.acc2 * delta_t
-            self.theta1 = self.theta1 + self.vel1 * delta_t
-            self.theta2 = self.theta2 + self.vel2 * delta_t
+                num1 = 2 * math.sin(delta_theta)
+                num2 = vel1 ** 2 * l1 * (m1 + m2)
+                num3 = G * (m1 + m2) * math.cos(theta1)
+                num4 = vel2 ** 2 * l2 * m2 * math.cos(delta_theta)
+                acc2 = num1 * (num2 + num3 + num4) / den2
+
+                return acc1, acc2
+
+            self.acc1, self.acc2 = compute_accelerations(self.theta1, self.theta2, self.vel1, self.vel2)
+            self.vel1 += 0.5 * delta_t * self.acc1
+            self.vel2 += 0.5 * delta_t * self.acc2
+    
 
     def kinetic(self):
         v1x = self.l1 * self.vel1 * math.cos(self.theta1)
@@ -125,28 +134,6 @@ class DoublePendulum:
         self.drag1 = False
         self.drag2 = False
 
-        # Initial acceleration
-        num1 = -G * (2 * self.m1 + self.m2) * math.sin(self.theta1)
-        num2 = -self.m2 * G * math.sin(self.theta1 - 2 * self.theta2)
-        num3 = -2 * math.sin(self.theta1 - self.theta2) * self.m2
-        num4 = self.vel2 ** 2 * self.l2 + self.vel1 ** 2 * self.l1 * math.cos(self.theta1 - self.theta2)
-        den = self.l1 * (2 * self.m1 + self.m2 - self.m2 * math.cos(2 * self.theta1 - 2 * self.theta2))
-        self.acc1 = (num1 + num2 + num3 * num4) / den
-
-        num1 = 2 * math.sin(self.theta1 - self.theta2)
-        num2 = (self.vel1 ** 2 * self.l1 * (self.m1 + self.m2))
-        num3 = G * (self.m1 + self.m2) * math.cos(self.theta1)
-        num4 = self.vel2 ** 2 * self.l2 * self.m2 * math.cos(self.theta1 - self.theta2)
-        den = self.l2 * (2 * self.m1 + self.m2 - self.m2 * math.cos(2 * self.theta1 - 2 * self.theta2))
-        self.acc2 = (num1 + num2 + num3 * num4) / den
-        # Initial velocity (measured in half step)
-        self.vel1 += self.acc1 * (delta_t / 2)
-        self.vel2 += self.acc2 * (delta_t / 2)
-
-        #Update position
-        self.theta1 += self.vel1 * delta_t
-        self.theta2 += self.vel2 * delta_t
-
 def draw_text(screen, text, position, font, color=black):
     text_surface = font.render(text, True, color)
     screen.blit(text_surface, position)
@@ -156,22 +143,10 @@ origin = (width // 2, height // 4)
 double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
 
 
-plt.ion()  # turn on interactive mode
-fig, ax = plt.subplots()
 kinetic_energies = []
 potential_energies = []
 total_energies = []
 time_steps = []
-
-line_total, = ax.plot([], [], 'r-', label="Total Energy")
-line_kinetic, = ax.plot([], [], 'g-', label="Kinetic Energy")
-line_potential, = ax.plot([], [], 'b-', label="Potential Energy")
-ax.set_xlim(0, 100)
-ax.set_ylim(-500, 1500)
-ax.set_title("Energy Over Time")
-ax.set_xlabel("Time Step")
-ax.set_ylabel("Energy")
-ax.legend(loc="upper right")
 
 time_step = 0
 running = True
@@ -201,29 +176,16 @@ while running:
     double_pendulum.update()
     double_pendulum.draw(screen)
 
-    # calc energies
+    # Calculate energies
     kinetic_energy = double_pendulum.kinetic()
     potential_energy = double_pendulum.potential()
     total_energy = kinetic_energy + potential_energy
 
-    # append energies to lists
+    # Append energies to lists
     kinetic_energies.append(kinetic_energy)
     potential_energies.append(potential_energy)
     total_energies.append(total_energy)
     time_steps.append(time_step)
-
-    # update plot
-    line_total.set_xdata(time_steps)
-    line_total.set_ydata(total_energies)
-    line_kinetic.set_xdata(time_steps)
-    line_kinetic.set_ydata(kinetic_energies)
-    line_potential.set_xdata(time_steps)
-    line_potential.set_ydata(potential_energies)
-
-    # rescale plot if wanted
-    ax.set_xlim(0, max(100, time_step))
-    ax.set_ylim(min(min(total_energies), min(potential_energies), min(kinetic_energies)) - 500,
-                max(max(total_energies), max(potential_energies), max(kinetic_energies)) + 500)
 
     instructions = "Space: Reset, dont reccomend lol"
     energy_text = f"Total Energy: {total_energy:.2f} | KE: {kinetic_energy:.2f} | PE: {potential_energy:.2f}"
@@ -231,12 +193,19 @@ while running:
     draw_text(screen, instructions, (10, height - 90), font)
     draw_text(screen, energy_text, (10, height - 60), font)
 
-    fig.canvas.draw()  # redraw plot if wanted
-    fig.canvas.flush_events()  # update plot
-
     time_step += 1
 
     pygame.display.flip()
-    #clock.tick(FPS)
 
 pygame.quit()
+
+plt.figure(figsize=(10, 6))
+plt.plot(time_steps, total_energies, label="Total Energy", color='red')
+plt.plot(time_steps, kinetic_energies, label="Kinetic Energy", color='green')
+plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
+plt.title("Energy Over Time")
+plt.xlabel("Time Step")
+plt.ylabel("Energy")
+plt.legend(loc="upper right")
+plt.grid()
+plt.show()
