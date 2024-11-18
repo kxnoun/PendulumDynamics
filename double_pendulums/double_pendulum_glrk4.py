@@ -67,7 +67,6 @@ class DoublePendulum:
                 acc1, acc2 = compute_accelerations(theta1, theta2, omega1, omega2)
                 return np.array([omega1, omega2, acc1, acc2])
             
-            @staticmethod
             def compute_accelerations(theta1, theta2, omega1, omega2):
                 delta_theta = theta1 - theta2
                 den1 = l1 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
@@ -233,6 +232,8 @@ while running:
     draw_text(screen, energy_text, (10, height - 60), font)
 
     time_step += 1
+    if time_step >= 10000:
+        running = False
 
     pygame.display.flip()
 
@@ -242,6 +243,15 @@ plt.figure(figsize=(10, 6))
 plt.plot(time_steps, total_energies, label="Total Energy", color='red')
 plt.plot(time_steps, kinetic_energies, label="Kinetic Energy", color='green')
 plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
+plt.title("Energy Over Time")
+plt.xlabel("Time Step")
+plt.ylabel("Energy")
+plt.legend(loc="upper right")
+plt.grid()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(time_steps, total_energies, label="Total Energy", color='red')
 plt.title("Energy Over Time")
 plt.xlabel("Time Step")
 plt.ylabel("Energy")

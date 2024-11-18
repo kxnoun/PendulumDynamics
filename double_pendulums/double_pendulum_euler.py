@@ -130,7 +130,7 @@ def draw_text(screen, text, position, font, color=black):
 
 
 origin = (width // 2, height // 4)
-double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
+double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=3*math.pi / 4, theta2=0)
 
 
 kinetic_energies = []
@@ -193,9 +193,9 @@ pygame.quit()
 
 plt.figure(figsize=(10, 6))
 plt.plot(time_steps, total_energies, label="Total Energy", color='red')
-plt.plot(time_steps, kinetic_energies, label="Kinetic Energy", color='green')
-plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
-plt.title("Energy Over Time")
+#plt.plot(time_steps, kinetic_energies, label="Kinetic Energy", color='green')
+#plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
+plt.title("Euler's Method: Double Pendulum Energy Over Time")
 plt.xlabel("Time Step")
 plt.ylabel("Energy")
 plt.legend(loc="upper right")

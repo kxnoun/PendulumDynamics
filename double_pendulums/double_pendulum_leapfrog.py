@@ -56,7 +56,6 @@ class DoublePendulum:
             l1 = self.l1
             l2 = self.l2
             
-            @staticmethod
             def compute_accelerations(theta1, theta2, vel1, vel2):
                 delta_theta = theta1 - theta2
                 den1 = l1 * (2 * m1 + m2 - m2 * math.cos(2 * delta_theta))
