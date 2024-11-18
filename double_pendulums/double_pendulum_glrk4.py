@@ -14,10 +14,10 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
 G = 9.81
-delta_t = 0.1
+delta_t = 0.03
 
 class DoublePendulum:
-    def __init__(self, origin, l1, l2, m1, m2, theta1, theta2):
+    def __init__(self, origin, l1, l2, m1, m2, theta1, theta2, ball_color=black, line_color=black, delta_t=delta_t):
         self.origin = origin
         self.l1 = l1 # length1 from main bob to first bob
         self.l2 = l2 # length 2 from first bob to second bob
@@ -31,6 +31,9 @@ class DoublePendulum:
         self.acc2 = 0
         self.drag1 = False # if were dragging the first bob
         self.drag2 = False # if were dragging the second bob
+        self.ball_color = ball_color
+        self.line_color = line_color
+        self.delta_t=delta_t
 
     def get_pos(self):
         #where pendulum hangs + length (our y) + sin/cos of our angle (our x)
@@ -42,7 +45,7 @@ class DoublePendulum:
 
     def update(self):
         if not self.drag1 and not self.drag2:
-            h = delta_t
+            h = self.delta_t
             m1 = self.m1
             m2 = self.m2
             l1 = self.l1
@@ -150,10 +153,10 @@ class DoublePendulum:
 
     def draw(self, screen):
         (x1, y1), (x2, y2) = self.get_pos()
-        pygame.draw.line(screen, black, self.origin, (x1, y1), 2)
-        pygame.draw.circle(screen, red if self.drag1 else black, (int(x1), int(y1)), self.m1)
-        pygame.draw.line(screen, black, (x1, y1), (x2, y2), 2)
-        pygame.draw.circle(screen, red if self.drag2 else black, (int(x2), int(y2)), self.m2)
+        pygame.draw.line(screen, self.line_color, self.origin, (x1, y1), 2)
+        pygame.draw.circle(screen, red if self.drag1 else self.ball_color, (int(x1), int(y1)), self.m1)
+        pygame.draw.line(screen, self.line_color, (x1, y1), (x2, y2), 2)
+        pygame.draw.circle(screen, red if self.drag2 else self.ball_color, (int(x2), int(y2)), self.m2)
 
     def handle_mouse_drag(self, mouse_pos):
         """Adjust the angles of the pendulum based on the mouse position."""
@@ -176,85 +179,85 @@ def draw_text(screen, text, position, font, color=black):
     text_surface = font.render(text, True, color)
     screen.blit(text_surface, position)
 
+if __name__ == '__main__':
+    origin = (width // 2, height // 4)
+    double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
 
-origin = (width // 2, height // 4)
-double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
 
+    kinetic_energies = []
+    potential_energies = []
+    total_energies = []
+    time_steps = []
 
-kinetic_energies = []
-potential_energies = []
-total_energies = []
-time_steps = []
+    time_step = 0
+    running = True
+    clock = pygame.time.Clock()
 
-time_step = 0
-running = True
-clock = pygame.time.Clock()
+    while running:
+        screen.fill(white)
 
-while running:
-    screen.fill(white)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                (x1, y1), (x2, y2) = double_pendulum.get_pos()
+                if (mouse_pos[0] - x1) ** 2 + (mouse_pos[1] - y1) ** 2 <= double_pendulum.m1 ** 2:
+                    double_pendulum.drag1 = True
+                elif (mouse_pos[0] - x2) ** 2 + (mouse_pos[1] - y2) ** 2 <= double_pendulum.m2 ** 2:
+                    double_pendulum.drag2 = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                double_pendulum.release()
+            elif event.type == pygame.MOUSEMOTION:
+                double_pendulum.handle_mouse_drag(pygame.mouse.get_pos())
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            mouse_pos = pygame.mouse.get_pos()
-            (x1, y1), (x2, y2) = double_pendulum.get_pos()
-            if (mouse_pos[0] - x1) ** 2 + (mouse_pos[1] - y1) ** 2 <= double_pendulum.m1 ** 2:
-                double_pendulum.drag1 = True
-            elif (mouse_pos[0] - x2) ** 2 + (mouse_pos[1] - y2) ** 2 <= double_pendulum.m2 ** 2:
-                double_pendulum.drag2 = True
-        elif event.type == pygame.MOUSEBUTTONUP:
-            double_pendulum.release()
-        elif event.type == pygame.MOUSEMOTION:
-            double_pendulum.handle_mouse_drag(pygame.mouse.get_pos())
+        double_pendulum.update()
+        double_pendulum.draw(screen)
 
-    double_pendulum.update()
-    double_pendulum.draw(screen)
+        # Calculate energies
+        kinetic_energy = double_pendulum.kinetic()
+        potential_energy = double_pendulum.potential()
+        total_energy = kinetic_energy + potential_energy
 
-    # Calculate energies
-    kinetic_energy = double_pendulum.kinetic()
-    potential_energy = double_pendulum.potential()
-    total_energy = kinetic_energy + potential_energy
+        # Append energies to lists
+        kinetic_energies.append(kinetic_energy)
+        potential_energies.append(potential_energy)
+        total_energies.append(total_energy)
+        time_steps.append(time_step)
 
-    # Append energies to lists
-    kinetic_energies.append(kinetic_energy)
-    potential_energies.append(potential_energy)
-    total_energies.append(total_energy)
-    time_steps.append(time_step)
+        instructions = "Space: Reset, dont reccomend lol"
+        energy_text = f"Total Energy: {total_energy:.2f} | KE: {kinetic_energy:.2f} | PE: {potential_energy:.2f}"
 
-    instructions = "Space: Reset, dont reccomend lol"
-    energy_text = f"Total Energy: {total_energy:.2f} | KE: {kinetic_energy:.2f} | PE: {potential_energy:.2f}"
+        draw_text(screen, instructions, (10, height - 90), font)
+        draw_text(screen, energy_text, (10, height - 60), font)
 
-    draw_text(screen, instructions, (10, height - 90), font)
-    draw_text(screen, energy_text, (10, height - 60), font)
+        time_step += 1
+        #if time_step >= 2500:
+        #    running = False
 
-    time_step += 1
-    if time_step >= 10000:
-        running = False
+        pygame.display.flip()
 
-    pygame.display.flip()
+    pygame.quit()
 
-pygame.quit()
+    plt.figure(figsize=(10, 6))
+    plt.plot(time_steps, total_energies, label="Total Energy", color='red')
+    plt.plot(time_steps, kinetic_energies, label="Kinetic Energy", color='green')
+    plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
+    plt.title("GLRK4: Double Pendulum Energy Over Time")
+    plt.xlabel("Time Step")
+    plt.ylabel("Energy")    
+    plt.legend(loc="upper right")
+    plt.grid()
+    plt.show()
 
-plt.figure(figsize=(10, 6))
-plt.plot(time_steps, total_energies, label="Total Energy", color='red')
-plt.plot(time_steps, kinetic_energies, label="Kinetic Energy", color='green')
-plt.plot(time_steps, potential_energies, label="Potential Energy", color='blue')
-plt.title("Energy Over Time")
-plt.xlabel("Time Step")
-plt.ylabel("Energy")
-plt.legend(loc="upper right")
-plt.grid()
-plt.show()
-
-plt.figure(figsize=(10, 6))
-plt.plot(time_steps, total_energies, label="Total Energy", color='red')
-plt.title("Energy Over Time")
-plt.xlabel("Time Step")
-plt.ylabel("Energy")
-plt.legend(loc="upper right")
-plt.grid()
-plt.show()
+    plt.figure(figsize=(10, 6))
+    plt.plot(time_steps, total_energies, label="Total Energy", color='red')
+    plt.title("GLRK4: Double Pendulum Energy Over Time")
+    plt.xlabel("Time Step")
+    plt.ylabel("Energy")
+    plt.legend(loc="upper right")
+    plt.grid()
+    plt.show()

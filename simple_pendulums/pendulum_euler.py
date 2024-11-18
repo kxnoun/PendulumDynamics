@@ -9,7 +9,7 @@ G = 9.81
 black = (0, 0, 0)
 white = (255, 255, 255)
 red = (255, 0, 0)
-delta_t = 0.05
+delta_t = 0.01
 
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("bespendulum ever crEated")
@@ -151,7 +151,7 @@ while running:
     draw_text(screen, energy_text, (10, height - 60), font)
 
     time_step += 1
-    if time_step == 2500: # delete later
+    if time_step == 10000: # delete later
         running = False
 
     pygame.display.flip()

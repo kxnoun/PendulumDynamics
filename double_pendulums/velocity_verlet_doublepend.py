@@ -140,7 +140,7 @@ def draw_text(screen, text, position, font, color=black):
 
 
 origin = (width // 2, height // 4)
-double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=0, theta2=0)
+double_pendulum = DoublePendulum(origin, l1=200, l2=200, m1=15, m2=15, theta1=3 * math.pi / 4, theta2=0)
 
 
 kinetic_energies = []
