@@ -17,7 +17,7 @@ G = 9.81
 delta_t = 0.03
 
 class DoublePendulum:
-    def __init__(self, origin, l1, l2, m1, m2, theta1, theta2, ball_color=black, line_color=black, delta_t=delta_t):
+    def __init__(self, origin, l1, l2, m1, m2, theta1, theta2, ball_color=black, line_color=black, delta_t=delta_t, vel1=0, vel2=0):
         self.origin = origin
         self.l1 = l1 # length1 from main bob to first bob
         self.l2 = l2 # length 2 from first bob to second bob
@@ -25,8 +25,8 @@ class DoublePendulum:
         self.m2 = m2 # mass 2
         self.theta1 = theta1
         self.theta2 = theta2
-        self.vel1 = 0
-        self.vel2 = 0
+        self.vel1 = vel1
+        self.vel2 = vel2
         self.acc1 = 0
         self.acc2 = 0
         self.drag1 = False # if were dragging the first bob
@@ -188,6 +188,8 @@ if __name__ == '__main__':
     potential_energies = []
     total_energies = []
     time_steps = []
+    theta1_list, theta2_list, omega1_list, omega2_list = [], [], [], []
+
 
     time_step = 0
     running = True
@@ -216,6 +218,11 @@ if __name__ == '__main__':
 
         double_pendulum.update()
         double_pendulum.draw(screen)
+
+        theta1_list.append(double_pendulum.theta1)
+        theta2_list.append(double_pendulum.theta2)
+        omega1_list.append(double_pendulum.vel1)
+        omega2_list.append(double_pendulum.vel2)
 
         # Calculate energies
         kinetic_energy = double_pendulum.kinetic()
@@ -269,5 +276,23 @@ if __name__ == '__main__':
             bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
     plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
     plt.tight_layout(rect=[0, 0, 0.98, 1])
+    plt.grid()
+    plt.show()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(theta1_list, omega1_list, 'b-', label=r"$\theta_1$ vs $\omega_1$")
+    plt.xlabel("Angle θ1 [radians]")
+    plt.ylabel("Angular Velocity ω1 [radians/s]")
+    plt.title("Phase Portrait: First Pendulum")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(theta2_list, omega2_list, 'g-', label=r"$\theta_2$ vs $\omega_2$")
+    plt.xlabel("Angle θ2 [radians]")
+    plt.ylabel("Angular Velocity ω2 [radians/s]")
+    plt.title("Phase Portrait: Second Pendulum")
+    plt.legend()
     plt.grid()
     plt.show()

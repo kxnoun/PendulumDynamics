@@ -17,12 +17,12 @@ pygame.display.set_caption("bespendulum ever crEated")
 font = pygame.font.Font(None, 36)
 
 class Pendulum:
-    def __init__(self, origin, mass, length, damping=1.0) -> None:
+    def __init__(self, origin, mass, length, damping=1.0, angle=0,velocity=0) -> None:
         self.origin = origin
         self.mass = mass
         self.length = length
-        self.angle = 0
-        self.velocity = 0
+        self.angle = angle
+        self.velocity = velocity
         self.acceleration = 0
         self.dragging = False
         self.ball_color = black
@@ -141,94 +141,108 @@ def draw_text(screen, text, position, font, color=black):
     text_surface = font.render(text, True, color)
     screen.blit(text_surface, position)
 
-pendulum = Pendulum(origin=(width // 2, 100), length=300, mass=15)
-#pendulum.angle= math.pi/4
-running = True
-clock = pygame.time.Clock()
-time_step = 0
+if __name__ == '__main__':
+    pendulum = Pendulum(origin=(width // 2, 100), length=300, mass=15)
+    #pendulum.angle= math.pi/4
+    running = True
+    clock = pygame.time.Clock()
+    time_step = 0
 
-# Data lists for plotting after the simulation
-time_steps, kinetic_energies, potential_energies, total_energies = [], [], [], []
+    # Data lists for plotting after the simulation
+    time_steps, kinetic_energies, potential_energies, total_energies = [], [], [], []
+    angles, angular_velocities = [], []
 
-while running:
-    screen.fill(white)
-    for event in pygame.event.get():
-        mouse_pos = pygame.mouse.get_pos()
-        bob_x, bob_y = pendulum.get_pos()
-        curr_x = mouse_pos[0] - bob_x
-        curr_y = mouse_pos[1] - bob_y
-        if (curr_x) ** 2 + (curr_y) ** 2 <= pendulum.mass ** 2:
-            pendulum.ball_color = red
-        elif not pendulum.dragging:
-            pendulum.ball_color = black
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                pendulum = Pendulum(origin=(width // 2, 100), length=300, mass=15)
-            elif event.key == pygame.K_t:
-                pendulum.throwing_enabled = not pendulum.throwing_enabled
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+    while running:
+        screen.fill(white)
+        for event in pygame.event.get():
+            mouse_pos = pygame.mouse.get_pos()
+            bob_x, bob_y = pendulum.get_pos()
+            curr_x = mouse_pos[0] - bob_x
+            curr_y = mouse_pos[1] - bob_y
             if (curr_x) ** 2 + (curr_y) ** 2 <= pendulum.mass ** 2:
-                pendulum.dragging = True
                 pendulum.ball_color = red
-        elif event.type == pygame.MOUSEBUTTONUP:
-            pendulum.release()
-        elif event.type == pygame.MOUSEMOTION:
-            if pendulum.dragging:
-                pendulum.mouse_drag(pygame.mouse.get_pos())
+            elif not pendulum.dragging:
+                pendulum.ball_color = black
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    pendulum = Pendulum(origin=(width // 2, 100), length=300, mass=15)
+                elif event.key == pygame.K_t:
+                    pendulum.throwing_enabled = not pendulum.throwing_enabled
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if (curr_x) ** 2 + (curr_y) ** 2 <= pendulum.mass ** 2:
+                    pendulum.dragging = True
+                    pendulum.ball_color = red
+            elif event.type == pygame.MOUSEBUTTONUP:
+                pendulum.release()
+            elif event.type == pygame.MOUSEMOTION:
+                if pendulum.dragging:
+                    pendulum.mouse_drag(pygame.mouse.get_pos())
 
-    pendulum.update()
-    pendulum.draw(screen)
-    
-    kinetic_energy = pendulum.kinetic_energy()
-    potential_energy = pendulum.potential_energy()
-    total_energy = pendulum.total_energy()
-    
-    kinetic_energies.append(kinetic_energy)
-    potential_energies.append(potential_energy)
-    total_energies.append(total_energy)
-    time_steps.append(time_step)
+        pendulum.update()
+        pendulum.draw(screen)
 
-    instructions = "Space: Reset | T: Enable/Disable Throwing"
-    status = f"Throwing: {'Enabled' if pendulum.throwing_enabled else 'Disabled'}"
-    energy_text = f"Total Energy: {total_energy:.2f} | KE: {kinetic_energy:.2f} | PE: {potential_energy:.2f}"
+        angles.append(pendulum.angle)
+        angular_velocities.append(pendulum.velocity)
+        
+        kinetic_energy = pendulum.kinetic_energy()
+        potential_energy = pendulum.potential_energy()
+        total_energy = pendulum.total_energy()
+        
+        kinetic_energies.append(kinetic_energy)
+        potential_energies.append(potential_energy)
+        total_energies.append(total_energy)
+        time_steps.append(time_step)
 
-    draw_text(screen, instructions, (10, height - 120), font)
-    draw_text(screen, status, (10, height - 90), font)
-    draw_text(screen, energy_text, (10, height - 60), font)
+        instructions = "Space: Reset | T: Enable/Disable Throwing"
+        status = f"Throwing: {'Enabled' if pendulum.throwing_enabled else 'Disabled'}"
+        energy_text = f"Total Energy: {total_energy:.2f} | KE: {kinetic_energy:.2f} | PE: {potential_energy:.2f}"
 
-    time_step += 1
+        draw_text(screen, instructions, (10, height - 120), font)
+        draw_text(screen, status, (10, height - 90), font)
+        draw_text(screen, energy_text, (10, height - 60), font)
 
-    pygame.display.flip()
+        time_step += 1
 
-pygame.quit()
+        pygame.display.flip()
 
-# plot energy after
-plt.figure(figsize=(10, 6))
-plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
-plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
-plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
-plt.xlabel("Time Step")
-plt.ylabel("Energy")
-plt.title("GLRK4: Pendulum Energy Over Time")
-delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
-plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
-         verticalalignment='bottom', horizontalalignment='left',
-         bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
-plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
-plt.tight_layout(rect=[0, 0, 0.98, 1])
-plt.show()
+    pygame.quit()
 
-plt.figure(figsize=(10, 6))
-plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
-plt.xlabel("Time Step")
-plt.ylabel("Energy")
-plt.title("GLRK4: Pendulum Energy Over Time")
-delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
-plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
-         verticalalignment='bottom', horizontalalignment='left',
-         bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
-plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
-plt.tight_layout(rect=[0, 0, 0.98, 1])
-plt.show()
+    # plot energy after
+    plt.figure(figsize=(10, 6))
+    plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
+    plt.plot(time_steps, kinetic_energies, 'g-', label="Kinetic Energy")
+    plt.plot(time_steps, potential_energies, 'b-', label="Potential Energy")
+    plt.xlabel("Time Step")
+    plt.ylabel("Energy")
+    plt.title("GLRK4: Pendulum Energy Over Time")
+    delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
+    plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
+            verticalalignment='bottom', horizontalalignment='left',
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
+    plt.tight_layout(rect=[0, 0, 0.98, 1])
+    plt.show()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(time_steps, total_energies, 'r-', label="Total Energy")
+    plt.xlabel("Time Step")
+    plt.ylabel("Energy")
+    plt.title("GLRK4: Pendulum Energy Over Time")
+    delta_t_text = f"Time step (\u0394t): {delta_t:.2f}s"
+    plt.text(1.05, 0.05, delta_t_text, transform=plt.gca().transAxes, fontsize=10,
+            verticalalignment='bottom', horizontalalignment='left',
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.5))
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), title="Legend")
+    plt.tight_layout(rect=[0, 0, 0.98, 1])
+    plt.show()
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(angles, angular_velocities, 'b-', label="Phase Portrait")
+    plt.xlabel("Angle (θ) [radians]")
+    plt.ylabel("Angular Velocity (ω) [radians/s]")
+    plt.title("Phase Portrait of the Pendulum")
+    plt.legend()
+    plt.grid()
+    plt.show()
