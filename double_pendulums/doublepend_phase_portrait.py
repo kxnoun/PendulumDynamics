@@ -29,9 +29,9 @@ def simulate_double_pendulum(initial_conditions, steps=2000, step_skip=10):
     return angles1, velocities1, angles2, velocities2
 
 initial_conditions = [
-    (math.pi / 4, 5, math.pi / 4, -5), # Opposing velocities
-    (math.pi / 6, 2, math.pi / 2, 1),  # Mixed initial conditions
-    (math.pi / 3, 10, math.pi / 6, -10) # High-energy motion
+    (math.pi / 4, 0, math.pi / 4, 0), # Opposing velocities
+    (math.pi / 6, 0, math.pi / 2, 0),  # Mixed initial conditions
+    (3 * math.pi / 2, 0, math.pi / 6, 0) # High-energy motion
 ]
 
 phase_data = []

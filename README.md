@@ -1,16 +1,27 @@
+Videos we made using the GLRK4 Double Pendulums!
+
+*100 Double Pendulums*
+
+[![100 Double Pendulums](https://img.youtube.com/vi/9TLIVxt4TYo/0.jpg)](https://www.youtube.com/watch?v=9TLIVxt4TYo)
+
+*Chaotic Art*
+
+[![Chaos Art](https://img.youtube.com/vi/aP296WRKEqs/0.jpg)](https://www.youtube.com/watch?v=aP296WRKEqs)
+
 **how to use**<br />
-first, make sure you have python 3 installed
+hi quick lil readme
 
-also, make sure you have pygame installed (pip install pygame) and matplotlib (pip install matplotlib)
-then just press run and it should work fine. just click on a bob and drag it however you like to start the sim!
+just install the dependencies (pygame, matplotlib, scipy)
+and just run whichever pendulum you'd like to use!
 
-it should look like the following.
-
-![double_pend_euler_ss](double_pend_euler_ss.jpg)
+just drag whichever mass and drop, have fun!
+100 Double Pendulums:
 
 **the code**<br />
-if the code is confusing lmk and ill help, or you can always ask your favorite llm lol.
+play with delta_t, you should find better results the smaller delta_t is.
 
-delta_t here is a big focus on what causes numerical instability btw. 
+also, there is no fps cap, so sim may look unstable, add a clock = pygame.tick.Clock() before the while loop
+then in the while loop, at the end, add a clock.tick(120).
 
-here we are trying to avoid artificial energy drift through numerical instability. eulers is very unstable over time, especially with more complex systems like a dp. if you take a look at pendulum, it actually does quite well to approximate, compare that to the dp, and HUGE difference.
+also chaos_art.py, chaos_study.py, butterfly_effect.py are just for fun, try to run it,
+but it may be slow!
